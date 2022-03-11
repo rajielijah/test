@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test/size.dart';
@@ -14,10 +17,49 @@ class RegisterView extends StatefulWidget {
 }
 
 class _RegisterViewState extends State<RegisterView> {
+  bool isloading = false;
   @override
   Widget build(BuildContext context) {
     double sHeight = MediaQuery.of(context).size.height;
     double sWidth = MediaQuery.of(context).size.width;
+     Future<Map<String, dynamic>> register(String email, String phone, String username, 
+          String password,
+     ) async {
+       isloading = true;
+      var headers = {
+        'Content-Type': 'application/json'
+      };
+      var request = http.Request('POST',
+          Uri.parse('https://api.wowcatholic.org/dating/auth/signup?system=WebAPI&key=Web45k87u23bNR64g094h5wFWa9v56Q1L'));
+      request.body = json.encode({"email" : email, "phone": phone, "username": username, "password": password,
+                          "progress": {"NEXTSTEP": "PROFILE_UPDATE"}              
+      });
+      request.headers.addAll(headers);
+      http.StreamedResponse response = await request.send();
+
+      if (response.statusCode == 200) {
+        isloading = false;
+         var responseData = await http.Response.fromStream(response);
+        final result = jsonDecode(responseData.body);
+        if(result["status"] == "OK"){
+        final result = jsonDecode(responseData.body);
+        successAlertDialog(context);
+        return result;
+        }
+        else {
+        final result = jsonDecode(responseData.body);
+        failAlertDialog(context);
+        print(result);
+        return result;
+        }
+      }
+      else{
+        var responseData = await http.Response.fromStream(response);
+        final result = jsonDecode(responseData.body);
+        isloading = false;
+        return result;
+      }
+    }
     return Scaffold(
       body: Container(
         padding: EdgeInsets.only(top:resHeight(58, sHeight)),
@@ -41,7 +83,9 @@ class _RegisterViewState extends State<RegisterView> {
                   padding: EdgeInsets.only(
                     left: resHeight(20, sHeight),
                     right: resHeight(20, sHeight)),
-                    child: Form(child: Column(
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         TXT(
@@ -60,15 +104,16 @@ class _RegisterViewState extends State<RegisterView> {
                           height: resHeight(20, sHeight),
                         ),
                       TF(
-                        controller:firstNameController,
-                        hintText: "First Name",
+                        controller:userNameController,
+                        hintText: "UserName",
                       ),
                        SizedBox(
                           height: resHeight(20, sHeight),
                         ),
                       TF(
-                        controller: lastNameController,
-                        hintText: "Last Name",
+                        keyboardType: TextInputType.number,
+                        controller: phoneNoController,
+                        hintText: "Phone Number",
                       ),
                        SizedBox(
                           height: resHeight(20, sHeight),
@@ -85,12 +130,8 @@ class _RegisterViewState extends State<RegisterView> {
                   padding: const EdgeInsets.all(25.0),
                   child: GestureDetector(
                     onTap: () async{
-                      final prefs = await SharedPreferences.getInstance();
-                      await  prefs.setString("email", emailController.value.text);
-                      await  prefs.setString("firstName", firstNameController.value.text);
-                      await  prefs.setString("lastName", lastNameController.value.text);
-                     Navigator.of(context).push(MaterialPageRoute(builder: (_)=> const LoginView()));
-                      // SharedPreferences 
+                      register(emailController.value.text, phoneNoController.value.text, 
+                      userNameController.value.text, _passwordController.value.text);
                     },
                     child: Container(
                       height: resHeight(50, sHeight),
@@ -98,7 +139,9 @@ class _RegisterViewState extends State<RegisterView> {
                         color: Colors.grey[400],
                         borderRadius: BorderRadius.circular(8)
                       ),
-                      child: const Center(
+                      child: isloading ? const Center(
+                        child: CircularProgressIndicator(color: Colors.white,),
+                      )  :Center(
                         child: Text("Sign Up"),
                       ),
                     ),
@@ -135,9 +178,52 @@ class _RegisterViewState extends State<RegisterView> {
   final _formKey = GlobalKey<FormState>();
 
   TextEditingController emailController =  TextEditingController(text: '');
-  TextEditingController firstNameController =  TextEditingController(text: '');
-  TextEditingController lastNameController =  TextEditingController(text: '');
-  // TextEditingController emailController =  TextEditingController(text: '');
-  // TextEditingController emailController =  TextEditingController(text: '');
+  TextEditingController userNameController =  TextEditingController(text: '');
+  TextEditingController phoneNoController =  TextEditingController(text: '');
   TextEditingController _passwordController =  TextEditingController(text: '');
+
+failAlertDialog(BuildContext context) {
+     Widget okButton = FlatButton(  
+    child: const Text("Sign Up"),  
+    onPressed: () {  
+      Navigator.of(context).pop();
+    },  
+  );  
+  AlertDialog alert = AlertDialog(  
+    title: const Text("No record"),  
+    content: const Text("Kindly Sign up with correct details"),  
+    actions: [  
+      okButton,  
+    ],  
+  );  
+  showDialog(  
+    context: context,  
+    builder: (BuildContext context) {  
+      return alert;  
+    },  
+  );  
+  }
+ successAlertDialog(BuildContext context) {
+     Widget okButton = FlatButton(  
+    child: const Text("Login"),  
+    onPressed: () {  
+      Navigator.of(context).push(MaterialPageRoute(builder: (_)=> LoginView()));  
+    },  
+  );  
+  AlertDialog alert = AlertDialog(  
+    title: const Text("Your have successfully registered"),  
+    content: const Text("Kindly Sign in."),  
+    actions: [  
+      okButton,  
+    ],  
+  );  
+  showDialog(  
+    context: context,  
+    builder: (BuildContext context) {  
+      return alert;  
+    },  
+  );  
+  }
+
+
 }

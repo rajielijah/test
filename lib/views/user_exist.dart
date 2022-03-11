@@ -1,39 +1,34 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test/size.dart';
-import 'package:test/views/homepage.dart';
+import 'package:test/views/login.dart';
 import 'package:test/views/register.dart';
 import 'package:test/widget/text.dart';
 import 'package:test/widget/textfield.dart';
 import 'package:http/http.dart' as http;
 
 
-class LoginView extends StatefulWidget {
-  const LoginView({ Key? key }) : super(key: key);
+class UserExitView extends StatefulWidget {
+  const UserExitView({ Key? key }) : super(key: key);
 
   @override
-  State<LoginView> createState() => _LoginViewState();
+  _UserExitViewState createState() => _UserExitViewState();
 }
 
-class _LoginViewState extends State<LoginView> {
+class _UserExitViewState extends State<UserExitView> {
   bool isloading = false;
   @override
   Widget build(BuildContext context) {
-    double sHeight = MediaQuery.of(context).size.height;
+     double sHeight = MediaQuery.of(context).size.height;
     double sWidth = MediaQuery.of(context).size.width;
-    Future<Map<String, dynamic>> login(String email, String username, 
-          String password,
-     ) async {
+     Future<Map<String, dynamic>> getUser(String email) async {
        isloading = true;
       var headers = {
         'Content-Type': 'application/json'
       };
-      var request = http.Request('POST',
-          Uri.parse('https://api.wowcatholic.org/dating/auth/login?system=WebAPI&key=Web45k87u23bNR64g094h5wFWa9v56Q1L'));
-      request.body = json.encode({"email" : email, "username": username, "password": password,
-      });
+      var request = http.Request('GET',
+          Uri.parse('https://api.wowcatholic.org/dating/user-exist?system=WebAPI&key=Web45k87u23bNR64g094h5wFWa9v56Q1L&email=$email'));
       request.headers.addAll(headers);
       http.StreamedResponse response = await request.send();
 
@@ -60,14 +55,13 @@ class _LoginViewState extends State<LoginView> {
       }
     }
     return Scaffold(
-      body: Container(
-        padding: EdgeInsets.only(top:resHeight(58, sHeight)),
+      body: SafeArea(
         child: Column(
           children: [
             Padding(
               padding: const EdgeInsets.only(right: 15),
               child: Center(
-                child: TXT(text: "Login",
+                child: TXT(text: "Verify User",
                 textAlign: TextAlign.center,
                   edgeInset: const  EdgeInsets.all(0),
                 ),
@@ -82,16 +76,14 @@ class _LoginViewState extends State<LoginView> {
                   padding: EdgeInsets.only(
                     left: resHeight(20, sHeight),
                     right: resHeight(20, sHeight)),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
+                    child: Form(child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SizedBox(
                             height: resHeight(76, sHeight),
                           ),
                         TXT(
-                          text: "Welcome back,",
+                          text: "Verify,",
                           fontWeight: FontWeight.bold,
                           fontSize: resHeight(27, sHeight),
                         ),
@@ -105,17 +97,7 @@ class _LoginViewState extends State<LoginView> {
                        SizedBox(
                           height: resHeight(20, sHeight),
                         ),
-                      TF(
-                        controller: usernameController,
-                        hintText: "Username",
-                      ), 
-                    SizedBox(
-                          height: resHeight(20, sHeight),
-                        ),
-                      TF(
-                        controller:_passwordController,
-                        hintText: "Password",
-                      )
+                    
                       ],
                     ))
                 ),
@@ -123,7 +105,7 @@ class _LoginViewState extends State<LoginView> {
                   padding: const EdgeInsets.all(25.0),
                   child: GestureDetector(
                     onTap: () async {
-                      login(emailController.value.text, usernameController.value.text, _passwordController.value.text);
+                      getUser(emailController.value.text);
                     },
                     child: Container(
                       height: resHeight(50, sHeight),
@@ -131,33 +113,15 @@ class _LoginViewState extends State<LoginView> {
                         color: Colors.grey[400],
                         borderRadius: BorderRadius.circular(8)
                       ),
-                      child: const Center(
+                      child: isloading ? const Center(
+                        child: CircularProgressIndicator(color: Colors.white,),
+                      ) : const Center(
                         child: Text("Login"),
                       ),
                     ),
                   ),
                 ),
-                Container(
-                  margin: EdgeInsets.only(
-                      top: resHeight(40, sHeight)),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      TXT(
-                        text: "New User?",
-                        fontSize: resHeight(14, sHeight),
-                      ),
-                      GestureDetector(
-                        onTap: (){
-                          Navigator.of(context).push(MaterialPageRoute(builder: (_)=> const RegisterView()));
-                        },
-                        child: TXT(
-                            text: " Create Account",
-                            fontSize: resHeight(14, sHeight),
-                      ))
-                    ],
-                  ),
-                ),
+               
               ],
             ))
           ],
@@ -165,23 +129,20 @@ class _LoginViewState extends State<LoginView> {
       ),
     );
   }
-
 final _formKey = GlobalKey<FormState>();
 
   TextEditingController emailController =  TextEditingController(text: '');
-  TextEditingController usernameController =  TextEditingController(text: '');
-  TextEditingController _passwordController =  TextEditingController(text: '');
-  
-failAlertDialog(BuildContext context) {
+
+  failAlertDialog(BuildContext context) {
      Widget okButton = FlatButton(  
-    child: const Text("Login"),  
+    child: const Text("Sign Up"),  
     onPressed: () {  
-      Navigator.of(context).pop();  
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => RegisterView()));  
     },  
   );  
   AlertDialog alert = AlertDialog(  
     title: const Text("No record"),  
-    content: const Text("Wrong username/email or Password."),  
+    content: const Text("Kindly Sign up."),  
     actions: [  
       okButton,  
     ],  
@@ -195,14 +156,14 @@ failAlertDialog(BuildContext context) {
   }
  successAlertDialog(BuildContext context) {
      Widget okButton = FlatButton(  
-    child: const Text("Ok"),  
+    child: const Text("Login"),  
     onPressed: () {  
-      Navigator.of(context).pop();  
+      Navigator.of(context).push(MaterialPageRoute(builder: (_)=> LoginView()));  
     },  
   );  
   AlertDialog alert = AlertDialog(  
-    title: const Text("Successful"),  
-    content: const Text("You have logged in successfully"),  
+    title: const Text("Your email has been verified"),  
+    content: const Text("Kindly Sign in."),  
     actions: [  
       okButton,  
     ],  
@@ -214,5 +175,4 @@ failAlertDialog(BuildContext context) {
     },  
   );  
   }
-
 }

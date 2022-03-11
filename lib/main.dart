@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:test/views/login.dart';
+import 'package:test/views/user_exist.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,7 +16,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const LoginView(),
+      home: const UserExitView(),
     );
   }
 }
